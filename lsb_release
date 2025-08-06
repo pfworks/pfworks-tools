@@ -1,0 +1,88 @@
+#!/bin/bash
+
+short() {
+  if [ $short -ne 1 ]; then
+    echo -n "$1"
+  fi
+}
+
+version() {
+  short "LSB Version: "
+  echo ":ooma-shell-script-1.0"
+}
+
+distributor() {
+  short "Distributor ID: "
+  echo "$ID"
+}
+
+description() {
+  short "Description: "
+  echo "$PRETTY_NAME"
+}
+
+release() {
+  short "Release: "
+  echo "$VERSION_ID"
+}
+
+codename() {
+  short "Codename: "
+  [ -n "$VERSION_CODENAME" ] && echo "$VERSION_CODENAME"
+}
+
+short=0
+
+if [ -f /etc/os-release ]; then
+  . /etc/os-release
+else
+  echo "Error: /etc/os-release not found."
+  exit 1
+fi
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+  key="$1"
+
+  case $key in
+    -a) version=1
+        distributor=1
+        description=1
+        release=1
+        codename=1
+        shift
+        ;;
+    -v) version=1
+        shift
+        ;;
+    -i) distributor=1
+        shift
+        ;;
+    -d) description=1
+        shift
+        ;;
+    -r) release=1
+        shift
+        ;;
+    -c) codename=1
+        shift
+        ;;
+    -s) short=1
+        shift
+        ;;
+    *) POSITIONAL+=("$1")
+       shift
+       ;;
+  esac
+done
+set -- "$POSITIONAL[@]"
+
+[ $# -eq 0 ] && version=1
+[ "$version" = 1 ] && version
+[ "$distributor" = 1 ] && distributor
+[ "$description" = 1 ] && description
+[ "$release" = 1 ] && release
+[ "$codename" = 1 ] && codename
+echo
+exit 0
