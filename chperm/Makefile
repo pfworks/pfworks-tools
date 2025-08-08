@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -O2
-TARGET = my_chown
-SOURCE = my_chown.c
+TARGET = chperm
+SOURCE = chperm.c
 
 .PHONY: all clean install test
 

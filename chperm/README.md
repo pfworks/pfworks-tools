@@ -22,7 +22,7 @@ make
 ## Usage
 
 ```bash
-./my_chown [OPTION]... [OWNER][:[GROUP]] [MODE] FILE...
+./chperm [OPTION]... [OWNER][:[GROUP]] [MODE] FILE...
 ```
 
 ### Options
@@ -54,31 +54,31 @@ make
 
 ```bash
 # Change owner only
-./my_chown root file.txt
+./chperm root file.txt
 
 # Change owner and group
-./my_chown root:staff file.txt
+./chperm root:staff file.txt
 
 # Change owner and permissions
-./my_chown root 755 file.txt
+./chperm root 755 file.txt
 
 # Change owner, group, and permissions
-./my_chown root:staff 644 file.txt
+./chperm root:staff 644 file.txt
 
 # Change only the group and permissions
-./my_chown :staff 755 file.txt
+./chperm :staff 755 file.txt
 
 # Use symbolic permissions
-./my_chown root u+x,g-w file.txt
+./chperm root u+x,g-w file.txt
 
 # Recursive change with verbose output
-./my_chown -R -v user:group 755 directory/
+./chperm -R -v user:group 755 directory/
 
 # Use numeric IDs with permissions
-./my_chown 1000:1000 644 file.txt
+./chperm 1000:1000 644 file.txt
 
 # Only change permissions (keep current owner)
-./my_chown $(whoami) u+x file.txt
+./chperm $(whoami) u+x file.txt
 ```
 
 ## Testing
@@ -127,11 +127,8 @@ This hybrid version combines functionality that is normally split between `chown
 
 ## Files
 
-- `my_chown.c`: Main hybrid implementation
+- `chperm.c`: Main hybrid implementation
 - `Makefile`: Build configuration with comprehensive tests
 - `README.md`: This documentation
-- `coreutils-9.4/`: Downloaded GNU coreutils source for reference
+- `LICENSE': GNU v3 License
 
-## License
-
-This implementation is provided as an educational example. The original GNU coreutils is licensed under GPL v3.
