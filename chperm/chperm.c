@@ -319,9 +319,34 @@ static void print_change(const char *path, uid_t old_uid, gid_t old_gid, uid_t n
     }
     
     if (permissions_changed) {
+        char old_mode_str[10], new_mode_str[10];
+        
+        /* Convert modes to strings separately to avoid static buffer issues */
+        old_mode_str[0] = (old_mode & S_IRUSR) ? 'r' : '-';
+        old_mode_str[1] = (old_mode & S_IWUSR) ? 'w' : '-';
+        old_mode_str[2] = (old_mode & S_IXUSR) ? 'x' : '-';
+        old_mode_str[3] = (old_mode & S_IRGRP) ? 'r' : '-';
+        old_mode_str[4] = (old_mode & S_IWGRP) ? 'w' : '-';
+        old_mode_str[5] = (old_mode & S_IXGRP) ? 'x' : '-';
+        old_mode_str[6] = (old_mode & S_IROTH) ? 'r' : '-';
+        old_mode_str[7] = (old_mode & S_IWOTH) ? 'w' : '-';
+        old_mode_str[8] = (old_mode & S_IXOTH) ? 'x' : '-';
+        old_mode_str[9] = '\0';
+        
+        new_mode_str[0] = (new_mode & S_IRUSR) ? 'r' : '-';
+        new_mode_str[1] = (new_mode & S_IWUSR) ? 'w' : '-';
+        new_mode_str[2] = (new_mode & S_IXUSR) ? 'x' : '-';
+        new_mode_str[3] = (new_mode & S_IRGRP) ? 'r' : '-';
+        new_mode_str[4] = (new_mode & S_IWGRP) ? 'w' : '-';
+        new_mode_str[5] = (new_mode & S_IXGRP) ? 'x' : '-';
+        new_mode_str[6] = (new_mode & S_IROTH) ? 'r' : '-';
+        new_mode_str[7] = (new_mode & S_IWOTH) ? 'w' : '-';
+        new_mode_str[8] = (new_mode & S_IXOTH) ? 'x' : '-';
+        new_mode_str[9] = '\0';
+        
         printf("permissions changed from %s (%04o) to %s (%04o)", 
-               mode_to_string(old_mode), old_mode & 07777,
-               mode_to_string(new_mode), new_mode & 07777);
+               old_mode_str, old_mode & 07777,
+               new_mode_str, new_mode & 07777);
     }
     
     if (!ownership_changed && !permissions_changed) {
@@ -542,28 +567,71 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     
-    /* Need at least owner and one file */
+    /* Need at least one argument and one file */
     if (optind + 1 >= argc) {
         fprintf(stderr, "my_chown: missing operand\n");
         usage();
         exit(1);
     }
     
-    /* Parse owner:group specification */
-    if (parse_owner_group(argv[optind], &uid, &gid) != 0) {
-        exit(1);
-    }
-    optind++;
+    /* Check if first argument is a mode-only specification */
+    char *first_arg = argv[optind];
+    int is_mode_only = 0;
     
-    /* Check if next argument is a mode specification */
-    if (optind < argc && optind + 1 < argc) {
-        /* Check if this looks like a mode (numeric or contains +, -, =) */
-        char *potential_mode = argv[optind];
-        if (is_numeric_mode(potential_mode) || 
-            strchr(potential_mode, '+') || strchr(potential_mode, '-') || strchr(potential_mode, '=')) {
-            mode_str = potential_mode;
-            opts.change_perms = 1;
-            optind++;
+    /* Check if it looks like a mode and NOT like a valid user */
+    if (is_numeric_mode(first_arg) || 
+        strchr(first_arg, '+') || strchr(first_arg, '-') || strchr(first_arg, '=')) {
+        /* This looks like a mode specification */
+        
+        if (is_numeric_mode(first_arg)) {
+            /* For numeric strings, check if it's a valid octal mode (3-4 digits, <= 7777) */
+            char *endptr;
+            long mode_long = strtol(first_arg, &endptr, 8);  /* Parse as octal */
+            if (*endptr == '\0' && mode_long >= 0 && mode_long <= 07777 && strlen(first_arg) <= 4) {
+                /* This looks like a valid octal mode, treat as mode-only */
+                is_mode_only = 1;
+            } else {
+                /* Check if it's a valid user */
+                struct passwd *pwd = getpwnam(first_arg);
+                if (!pwd) {
+                    /* Not a valid username, check if it's a valid numeric UID */
+                    long uid_long = strtol(first_arg, &endptr, 10);
+                    if (*endptr != '\0' || uid_long < 0) {
+                        /* Not a valid numeric UID either, must be mode-only */
+                        is_mode_only = 1;
+                    }
+                }
+            }
+        } else {
+            /* Contains symbolic mode characters (+, -, =), definitely a mode */
+            is_mode_only = 1;
+        }
+    }
+    
+    if (is_mode_only) {
+        /* Mode-only command: chperm MODE FILE... */
+        uid = (uid_t)-1;  /* Don't change owner */
+        gid = (gid_t)-1;  /* Don't change group */
+        mode_str = first_arg;
+        opts.change_perms = 1;
+        optind++;
+    } else {
+        /* Owner/group specification first */
+        if (parse_owner_group(argv[optind], &uid, &gid) != 0) {
+            exit(1);
+        }
+        optind++;
+        
+        /* Check if next argument is a mode specification */
+        if (optind < argc && optind + 1 < argc) {
+            /* Check if this looks like a mode (numeric or contains +, -, =) */
+            char *potential_mode = argv[optind];
+            if (is_numeric_mode(potential_mode) || 
+                strchr(potential_mode, '+') || strchr(potential_mode, '-') || strchr(potential_mode, '=')) {
+                mode_str = potential_mode;
+                opts.change_perms = 1;
+                optind++;
+            }
         }
     }
     
