@@ -106,13 +106,15 @@ def test_wsl_basic_commands():
 
 def test_wsl_interactive_shell():
     """Test WSL interactive shell with profile loading"""
-    print("\n🔍 Testing WSL Interactive Shell...")
+    print("\n🔍 Testing WSL Interactive Shell with Full Environment...")
     
     tests = [
-        ("Login shell test", "bash -l -c 'echo $HOME'"),
-        ("Profile loading", "bash -l -c 'echo $PATH | tr : \\\\n | head -5'"),
-        ("SSH Agent", "bash -l -c 'echo SSH_AUTH_SOCK: $SSH_AUTH_SOCK'"),
-        ("User info", "bash -l -c 'whoami && id'")
+        ("Login shell test", "bash -l -c 'echo HOME: $HOME'"),
+        ("Profile loading", "bash -l -c 'echo PATH: $PATH | tr : \\\\n | head -5'"),
+        ("SSH Agent", "bash -l -c 'echo SSH_AUTH_SOCK: $SSH_AUTH_SOCK; echo SSH_AGENT_PID: $SSH_AGENT_PID'"),
+        ("SSH Keys", "bash -l -c 'ssh-add -l 2>/dev/null | head -3 || echo \"No SSH keys or agent not running\"'"),
+        ("User info", "bash -l -c 'whoami && id'"),
+        ("Environment variables", "bash -l -c 'env | grep -E \"^(HOME|USER|PATH|SSH_)\" | head -5'")
     ]
     
     for test_name, command in tests:
@@ -165,9 +167,9 @@ def test_q_cli_availability():
         
         # Test version
         try:
-            result = subprocess.run(
+            result = run_wsl_command_safe(
                 ['wsl', '--', 'bash', '-l', '-c', f'{working_command} --version'],
-                capture_output=True, text=True, timeout=15
+                timeout=15
             )
             if result.returncode == 0:
                 print(f"✅ {working_command} version: {result.stdout.strip()}")
@@ -178,9 +180,9 @@ def test_q_cli_availability():
         
         # Test help
         try:
-            result = subprocess.run(
+            result = run_wsl_command_safe(
                 ['wsl', '--', 'bash', '-l', '-c', f'{working_command} --help | head -3'],
-                capture_output=True, text=True, timeout=15
+                timeout=15
             )
             if result.returncode == 0:
                 print(f"✅ {working_command} help: Available")
@@ -193,9 +195,9 @@ def test_q_cli_availability():
         # Test chat command (if it's qchat)
         if working_command == 'qchat':
             try:
-                result = subprocess.run(
+                result = run_wsl_command_safe(
                     ['wsl', '--', 'bash', '-l', '-c', 'echo "test" | qchat chat --help | head -3'],
-                    capture_output=True, text=True, timeout=15
+                    timeout=15
                 )
                 if result.returncode == 0:
                     print("✅ qchat chat command: Available")

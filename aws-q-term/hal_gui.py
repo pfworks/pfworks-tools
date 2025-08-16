@@ -163,16 +163,16 @@ class HALInterface:
             return '/bin/bash'
     
     def get_shell_command_for_platform(self, command):
-        """Get platform-appropriate shell command"""
+        """Get platform-appropriate shell command with proper environment"""
         if self.use_wsl:
-            # Simplified WSL command - no complex chaining
-            return ['wsl', '--', 'bash', '-c', command]
+            # Use interactive login shell to inherit full environment including SSH agent
+            return ['wsl', '--', 'bash', '-l', '-c', command]
         elif self.platform == "windows":
             # Windows cmd
             return ['cmd', '/c', command]
         else:  # macOS and Linux
-            # Use bash directly
-            return ['/bin/bash', '-c', command]
+            # Use bash with login shell for full environment
+            return ['/bin/bash', '-l', '-c', command]
     
     def init_wsl_environment(self):
         """Initialize WSL environment and get proper home directory"""
@@ -917,7 +917,7 @@ How may I assist you today?"""
             self.test_wsl_environment()
     
     def detect_q_cli_command(self):
-        """Detect which Q CLI command is available"""
+        """Detect which Q CLI command is available with proper environment"""
         if not hasattr(self, '_q_cli_command'):
             self._q_cli_command = None
             
@@ -926,9 +926,9 @@ How may I assist you today?"""
             for cmd in commands_to_test:
                 try:
                     if self.use_wsl:
-                        # Test in WSL
+                        # Test in WSL with login shell to access full PATH
                         result = subprocess.run(
-                            ['wsl', '--', 'which', cmd],
+                            ['wsl', '--', 'bash', '-l', '-c', f'which {cmd}'],
                             capture_output=True,
                             text=True,
                             timeout=5,
@@ -965,22 +965,28 @@ How may I assist you today?"""
         return self._q_cli_command
     
     def test_wsl_environment(self):
-        """Test WSL environment and report status"""
+        """Test WSL environment and report status with full environment"""
         try:
-            # Test basic WSL functionality with colors disabled
-            test_cmd = '''export NO_COLOR=1; export TERM=dumb; \
-echo "WSL Environment Test:" && \
+            # Test basic WSL functionality with login shell to get full environment
+            test_cmd = '''echo "WSL Environment Test:" && \
 echo "HOME: $HOME" && \
 echo "PATH: $PATH" && \
 echo "SSH_AUTH_SOCK: $SSH_AUTH_SOCK" && \
+echo "SSH_AGENT_PID: $SSH_AGENT_PID" && \
 echo "Q CLI Status:" && \
-(which q >/dev/null 2>&1 && echo "  q: Available" || echo "  q: Not found") && \
-(which qchat >/dev/null 2>&1 && echo "  qchat: Available" || echo "  qchat: Not found") && \
-(which amazon-q >/dev/null 2>&1 && echo "  amazon-q: Available" || echo "  amazon-q: Not found")'''
+(which q >/dev/null 2>&1 && echo "  q: Available at $(which q)" || echo "  q: Not found") && \
+(which qchat >/dev/null 2>&1 && echo "  qchat: Available at $(which qchat)" || echo "  qchat: Not found") && \
+(which amazon-q >/dev/null 2>&1 && echo "  amazon-q: Available at $(which amazon-q)" || echo "  amazon-q: Not found") && \
+echo "SSH Keys:" && \
+(ssh-add -l 2>/dev/null | head -3 || echo "  No SSH keys loaded or ssh-agent not running")'''
             
-            result = self.run_wsl_command(
-                self.get_wsl_command_prefix() + [test_cmd],
-                timeout=10
+            result = subprocess.run(
+                ['wsl', '--', 'bash', '-l', '-c', test_cmd],
+                capture_output=True,
+                text=True,
+                timeout=15,
+                encoding='utf-8',
+                errors='replace'
             )
             
             if result.returncode == 0:
@@ -1099,7 +1105,7 @@ echo "Q CLI Status:" && \
                 return ErrorResult(str(e))
     
     def process_q_command(self, message):
-        """Process the command through Q CLI with cross-platform support"""
+        """Process the command through Q CLI with proper environment inheritance"""
         try:
             # Detect which Q CLI command is available
             q_cmd = self.detect_q_cli_command()
@@ -1110,11 +1116,11 @@ echo "Q CLI Status:" && \
             
             # Prepare Q CLI command based on platform and detected variant
             if self.use_wsl:
-                # WSL execution
+                # WSL execution with login shell to inherit SSH agent and environment
                 if q_cmd == 'qchat':
-                    cmd_list = ['wsl', '--', 'bash', '-c', f'cd "{self.shell_cwd}" && echo "{message.replace('"', '\\"')}" | qchat chat']
+                    cmd_list = ['wsl', '--', 'bash', '-l', '-c', f'cd "{self.shell_cwd}" && echo "{message.replace('"', '\\"')}" | qchat chat']
                 else:
-                    cmd_list = ['wsl', '--', 'bash', '-c', f'cd "{self.shell_cwd}" && echo "{message.replace('"', '\\"')}" | {q_cmd} chat']
+                    cmd_list = ['wsl', '--', 'bash', '-l', '-c', f'cd "{self.shell_cwd}" && echo "{message.replace('"', '\\"')}" | {q_cmd} chat']
             else:
                 # Native execution (Windows, macOS, Linux)
                 if q_cmd == 'qchat':
@@ -1168,26 +1174,26 @@ echo "Q CLI Status:" && \
             self.output_queue.put(('q_error', f'Error: {str(e)}'))
     
     def process_shell_command(self, command):
-        """Process shell command with simplified cross-platform approach"""
+        """Process shell command with proper environment inheritance"""
         try:
             # Handle cd command specially to track working directory
             if command.strip().startswith('cd '):
                 self.handle_cd_command(command.strip())
                 return
             
-            # Execute other commands based on platform
+            # Execute other commands based on platform with full environment
             if self.use_wsl:
-                # Simple WSL execution
+                # Use interactive login shell to inherit SSH agent and full environment
                 full_cmd = f'cd "{self.shell_cwd}" && {command}'
-                cmd_list = ['wsl', '--', 'bash', '-c', full_cmd]
+                cmd_list = ['wsl', '--', 'bash', '-l', '-c', full_cmd]
             elif self.platform == "windows":
                 # Windows cmd execution
                 full_cmd = f'cd /d "{self.shell_cwd}" && {command}'
                 cmd_list = ['cmd', '/c', full_cmd]
             else:  # macOS and Linux
-                # Unix shell execution
+                # Unix shell execution with login shell for environment
                 full_cmd = f'cd "{self.shell_cwd}" && {command}'
-                cmd_list = ['/bin/bash', '-c', full_cmd]
+                cmd_list = ['/bin/bash', '-l', '-c', full_cmd]
             
             # Execute command with proper encoding
             result = subprocess.run(
@@ -1217,15 +1223,15 @@ echo "Q CLI Status:" && \
             self.output_queue.put(('shell_error', f'Error executing command: {str(e)}'))
     
     def handle_cd_command(self, command):
-        """Handle cd command for directory tracking"""
+        """Handle cd command for directory tracking with proper environment"""
         try:
             path = command[3:].strip()  # Remove 'cd '
             if not path:
                 # cd with no arguments goes to home
                 if self.use_wsl:
-                    # Get WSL home
+                    # Get WSL home with login shell
                     result = subprocess.run(
-                        ['wsl', '--', 'bash', '-c', 'echo $HOME'],
+                        ['wsl', '--', 'bash', '-l', '-c', 'echo $HOME'],
                         capture_output=True, text=True, timeout=10,
                         encoding='utf-8', errors='replace'
                     )
@@ -1238,10 +1244,10 @@ echo "Q CLI Status:" && \
             else:
                 # cd to specific path
                 if self.use_wsl:
-                    # Test path in WSL
+                    # Test path in WSL with login shell for proper environment
                     test_cmd = f'cd "{self.shell_cwd}" && cd "{path}" && pwd'
                     result = subprocess.run(
-                        ['wsl', '--', 'bash', '-c', test_cmd],
+                        ['wsl', '--', 'bash', '-l', '-c', test_cmd],
                         capture_output=True, text=True, timeout=10,
                         encoding='utf-8', errors='replace'
                     )
