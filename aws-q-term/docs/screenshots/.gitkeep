@@ -1,0 +1,16 @@
+# Screenshots Directory
+
+This directory will contain screenshots of the HAL 9000 Interface:
+
+- green-theme.png - Interface in green color theme
+- amber-theme.png - Interface in amber color theme  
+- shell-mode.png - Shell mode demonstration
+- q-cli-mode.png - Q CLI mode demonstration
+- installation.png - Installation process
+- tab-completion.png - Tab completion feature
+
+Screenshots should be:
+- High quality (PNG format preferred)
+- Consistent window size
+- Show relevant features clearly
+- Include both color themes where applicable
