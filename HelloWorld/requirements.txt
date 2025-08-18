@@ -1,0 +1,6 @@
+# No external dependencies required
+# This application uses only Python standard library modules:
+# - tkinter (GUI framework, included with Python)
+# - sys (system-specific parameters and functions)
+
+# Python 3.6+ is recommended for best compatibility
