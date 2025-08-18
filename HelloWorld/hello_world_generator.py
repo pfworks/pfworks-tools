@@ -96,6 +96,21 @@ class HelloWorldGenerator:
                     "code": '''PRINT "{text}"''',
                     "type": "interpreted"
                 },
+                "HP-71B BASIC": {
+                    "code": '''10 DISP "{text}"
+20 END''',
+                    "type": "interpreted"
+                },
+                "HP-75 BASIC": {
+                    "code": '''10 DISP "{text}"
+20 END''',
+                    "type": "interpreted"
+                },
+                "HP-85 BASIC": {
+                    "code": '''10 PRINT "{text}"
+20 END''',
+                    "type": "interpreted"
+                },
                 "BASICA": {
                     "code": '''10 PRINT "{text}"
 20 END''',
@@ -346,23 +361,7 @@ PROGRAM-ID. HELLO-WORLD.
 PROCEDURE DIVISION.
 DISPLAY '{text}'.
 STOP RUN.''',
-            "Assembly (x86-64)": '''.section .data
-    msg: .ascii "{text}\\n"
-    msg_len = . - msg
 
-.section .text
-    .global _start
-
-_start:
-    mov $1, %rax
-    mov $1, %rdi
-    mov $msg, %rsi
-    mov $msg_len, %rdx
-    syscall
-    
-    mov $60, %rax
-    mov $0, %rdi
-    syscall''',
             "Bash": 'echo "{text}"',
             "PowerShell": 'Write-Host "{text}"',
             "SQL": 'SELECT \'{text}\' AS message;',
@@ -545,23 +544,7 @@ PROGRAM-ID. HELLO-WORLD.
 PROCEDURE DIVISION.
 DISPLAY '{text}'.
 STOP RUN.''',
-            "Assembly (x86-64)": '''.section .data
-    msg: .ascii "{text}\\n"
-    msg_len = . - msg
 
-.section .text
-    .global _start
-
-_start:
-    mov $1, %rax
-    mov $1, %rdi
-    mov $msg, %rsi
-    mov $msg_len, %rdx
-    syscall
-    
-    mov $60, %rax
-    mov $0, %rdi
-    syscall''',
             "Bash": 'echo "{text}"',
             "PowerShell": 'Write-Host "{text}"',
             "SQL": 'SELECT \'{text}\' AS message;',
@@ -712,6 +695,42 @@ end''',
 echo "{text}"''',
             "csh": '''#!/bin/csh
 echo "{text}"''',
+            "Cray Fortran": '''C     Cray Fortran (CFT)
+      PROGRAM HELLO
+      WRITE(6,100) '{text}'
+100   FORMAT(A)
+      END''',
+            "Convex Fortran": '''C     Convex Fortran
+      PROGRAM HELLO
+      WRITE(*,*) '{text}'
+      END''',
+            "DCL (VMS)": '''$ WRITE SYS$OUTPUT "{text}"''',
+            "CAL (Cray Assembly)": '''        IDENT   HELLO
+        ENTRY   START
+START   S1      A1,=C'{text}'
+        S2      A2,13
+        CALL    WRITE
+        J       EXIT
+        END''',
+            "JCL (Job Control Language)": '''//HELLO    JOB  CLASS=A,MSGCLASS=A
+//STEP1    EXEC PGM=IEBGENER
+//SYSPRINT DD   SYSOUT=*
+//SYSUT1   DD   *
+{text}
+/*
+//SYSUT2   DD   SYSOUT=*
+//SYSIN    DD   DUMMY''',
+            "IBM System/360 Assembly": '''HELLO    CSECT
+         USING *,15
+         WTO   '{text}',ROUTCDE=11
+         BR    14
+         END   HELLO''',
+            "PL/I (IBM)": '''HELLO: PROCEDURE OPTIONS(MAIN);
+   PUT SKIP LIST('{text}');
+END HELLO;''',
+            "FOCAL (PDP-8)": '''01.10 TYPE "{text}"
+01.20 QUIT''',
+            "RT-11 DCL": '''TYPE "{text}"''',
             "J": '''echo '{text}' ''',
             "K": '''`0:"{text}"''',
             "PostScript": '''({text}) show
@@ -797,6 +816,19 @@ END:    HLT             ; Halt
 
 MSG:    DATA "{text}"
         DATA 0''',
+                "PDP-8": '''        *200
+START,  CLA CLL
+        TAD MSG
+        JMS PRINT
+        HLT
+MSG,    TEXT /{text}/
+        PAGE''',
+                "PDP-11": '''        .TITLE  HELLO
+        .MCALL  .PRINT, .EXIT
+START:  .PRINT  #MSG
+        .EXIT
+MSG:    .ASCII  /{text}/<15><12>
+        .END    START''',
             },
         }
         
@@ -822,7 +854,6 @@ MSG:    DATA "{text}"
             "Modula-2": "Compile with Modula-2 compiler",
             "Eiffel": "ec hello.e && ./hello",
             "COBOL": "cobc -x hello.cob && ./hello",
-            "Assembly (x86-64)": "as hello.s -o hello.o && ld hello.o -o hello && ./hello",
             "Objective-C": "gcc -framework Foundation hello.m -o hello && ./hello",
             "Dart": "dart compile exe hello.dart && ./hello.exe",
             "Groovy": "groovyc HelloWorld.groovy && java HelloWorld",
@@ -839,6 +870,15 @@ MSG:    DATA "{text}"
             "AppleScript": "osascript hello.applescript",
             "Bash": "bash hello.sh",
             "csh": "csh hello.csh",
+            "Cray Fortran": "cft hello.f && a.out",
+            "Convex Fortran": "fc hello.f && a.out", 
+            "DCL (VMS)": "Run on VAX/VMS system",
+            "CAL (Cray Assembly)": "cal hello.cal && segldr hello && hello",
+            "JCL (Job Control Language)": "Submit to IBM mainframe job queue",
+            "IBM System/360 Assembly": "Assemble and link on IBM System/360",
+            "PL/I (IBM)": "pli hello.pli && hello",
+            "FOCAL (PDP-8)": "Run in FOCAL interpreter on PDP-8",
+            "RT-11 DCL": "Run on RT-11 operating system",
             # C variants
             "  └─ C (K&R)": "cc hello.c -o hello && ./hello",
             "  └─ C89/C90 (ANSI C)": "gcc -std=c89 hello.c -o hello && ./hello",
@@ -869,6 +909,8 @@ MSG:    DATA "{text}"
             "  └─ 68000 (Motorola)": "m68k-linux-gnu-as hello.s -o hello.o && m68k-linux-gnu-ld hello.o -o hello",
             "  └─ 6502": "ca65 hello.s && ld65 hello.o -o hello.prg",
             "  └─ 4004 (Intel)": "Assemble with Intel 4004 assembler",
+            "  └─ PDP-8": "Assemble with PAL-8 assembler",
+            "  └─ PDP-11": "macro hello.mac && link hello",
         }
         
         self.setup_ui()
@@ -885,7 +927,7 @@ MSG:    DATA "{text}"
         main_frame.rowconfigure(1, weight=1)
         
         # Title
-        title_label = ttk.Label(main_frame, text="Hello World Code Generator - 90 Languages with Compilation Commands", 
+        title_label = ttk.Label(main_frame, text="Hello World Code Generator - 103 Languages with Compilation Commands", 
                                font=("Arial", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 10))
         
