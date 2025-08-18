@@ -1,0 +1,26 @@
++-------------------------------------+
+|                                     |
+|   TANDY RADIO SHACK TRS-80 MODEL I  |
+|                                     |
+|        16K LEVEL II BASIC           |
+|                                     |
+|   COPYRIGHT 1978 BY TANDY CORP.     |
+|                                     |
+|   MEMORY SIZE? 16384                |
+|                                     |
+|   READY                             |
+|   >_                                |
+|                                     |
+|   +-----------------------------+   |
+|   | ########################### |   |
+|   | #  TRS-80 MODEL I READY   # |   |
+|   | ########################### |   |
+|   |                             |   |
+|   | [KEYBOARD INTERFACE ACTIVE] |   |
+|   +-----------------------------+   |
+|                                     |
+|   SYSTEM STATUS: OPERATIONAL        |
+|   MODE: LEVEL II BASIC              |
+|   READY FOR INPUT                   |
+|                                     |
++-------------------------------------+

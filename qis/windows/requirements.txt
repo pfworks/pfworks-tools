@@ -1,0 +1,14 @@
+# HAL 9000 Windows Interface Requirements
+
+# Core GUI framework (usually included with Python)
+# tkinter - included with most Python installations
+
+# Image processing for HAL panel display
+Pillow>=8.0.0
+
+# Optional: Enhanced Windows terminal support
+colorama>=0.4.0
+
+# Development/Testing (optional)
+# pytest>=6.0.0
+# pytest-cov>=2.0.0
