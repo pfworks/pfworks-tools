@@ -1,9 +1,0 @@
-# HAL GUI Requirements
-# Built with Python standard library - minimal additional packages required
-# Requires Python 3.6+ with tkinter support
-
-# Required for HAL image display
-Pillow>=8.0.0
-
-# Optional: For enhanced features in future versions
-# requests>=2.25.0  # For potential web API integration
