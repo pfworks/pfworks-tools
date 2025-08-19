@@ -5,7 +5,7 @@ A GUI application that displays programming languages and generates Hello World 
 """
 
 import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
+from tkinter import ttk, scrolledtext, messagebox, font
 import sys
 
 class HelloWorldGenerator:
@@ -13,6 +13,33 @@ class HelloWorldGenerator:
         self.root = root
         self.root.title("Hello World Code Generator")
         self.root.geometry("900x700")
+        
+        # Create circuit board background
+        self.create_circuit_background()
+        
+        # Configure digital fonts
+        self.digital_font = ("Courier New", 10, "bold")  # Fallback font
+        self.title_font = ("Courier New", 16, "bold")
+        self.label_font = ("Courier New", 12, "bold")
+        
+        # Try to use more digital-looking fonts if available
+        try:
+            # These fonts give a more digital/dot-matrix appearance
+            available_fonts = list(font.families())
+            if "OCR A Extended" in available_fonts:
+                self.digital_font = ("OCR A Extended", 10)
+                self.title_font = ("OCR A Extended", 16, "bold")
+                self.label_font = ("OCR A Extended", 12, "bold")
+            elif "Consolas" in available_fonts:
+                self.digital_font = ("Consolas", 10, "bold")
+                self.title_font = ("Consolas", 16, "bold")
+                self.label_font = ("Consolas", 12, "bold")
+            elif "Monaco" in available_fonts:
+                self.digital_font = ("Monaco", 10, "bold")
+                self.title_font = ("Monaco", 16, "bold")
+                self.label_font = ("Monaco", 12, "bold")
+        except:
+            pass  # Use fallback fonts
         
         # Programming languages with their code templates and compilation info
         # Structure: language -> {code: template, compile: command, type: compiled/interpreted}
@@ -915,34 +942,107 @@ MSG:    .ASCII  /{text}/<15><12>
         
         self.setup_ui()
         
+    def create_circuit_background(self):
+        """Create a subtle circuit board pattern background using tkinter Canvas"""
+        # We'll create this dynamically in the UI setup since we need the window size
+        pass
+    
     def setup_ui(self):
-        # Create main frame
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        # Set the background color to match circuit board
+        self.root.configure(bg='#2a2a2a')
         
-        # Configure grid weights
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(1, weight=1)
+        # Create main frame with circuit board background
+        main_frame = tk.Frame(self.root, bg='#2a2a2a')
+        main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Title
-        title_label = ttk.Label(main_frame, text="Hello World Code Generator - 103 Languages with Compilation Commands", 
-                               font=("Arial", 16, "bold"))
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 10))
+        # Create a canvas for circuit board background
+        self.bg_canvas = tk.Canvas(main_frame, highlightthickness=0, bg='#2a2a2a')
+        self.bg_canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        
+        # Draw circuit board pattern
+        def draw_circuit_pattern():
+            self.bg_canvas.delete("circuit")
+            canvas_width = self.bg_canvas.winfo_width()
+            canvas_height = self.bg_canvas.winfo_height()
+            
+            if canvas_width > 1 and canvas_height > 1:  # Make sure canvas is initialized
+                # Draw grid pattern
+                trace_color = '#404040'
+                pad_color = '#505050'
+                component_color = '#606060'
+                
+                # Horizontal traces
+                for y in range(0, canvas_height, 30):
+                    self.bg_canvas.create_line(0, y, canvas_width, y, fill=trace_color, width=1, tags="circuit")
+                    # Add connection pads
+                    for x in range(15, canvas_width, 60):
+                        self.bg_canvas.create_oval(x-3, y-3, x+3, y+3, fill=pad_color, outline=pad_color, tags="circuit")
+                
+                # Vertical traces
+                for x in range(0, canvas_width, 30):
+                    self.bg_canvas.create_line(x, 0, x, canvas_height, fill=trace_color, width=1, tags="circuit")
+                    # Add connection pads
+                    for y in range(15, canvas_height, 60):
+                        self.bg_canvas.create_oval(x-3, y-3, x+3, y+3, fill=pad_color, outline=pad_color, tags="circuit")
+                
+                # Add some diagonal traces
+                for i in range(0, canvas_width, 90):
+                    for j in range(0, canvas_height, 90):
+                        self.bg_canvas.create_line(i, j, i+45, j+45, fill=trace_color, width=1, tags="circuit")
+                        self.bg_canvas.create_line(i+45, j, i, j+45, fill=trace_color, width=1, tags="circuit")
+                
+                # Add small components (rectangles)
+                for x in range(45, canvas_width, 120):
+                    for y in range(45, canvas_height, 120):
+                        self.bg_canvas.create_rectangle(x-8, y-4, x+8, y+4, fill=component_color, outline=component_color, tags="circuit")
+                
+                # Send circuit pattern to back
+                self.bg_canvas.tag_lower("circuit")
+        
+        # Bind canvas resize to redraw pattern
+        self.bg_canvas.bind('<Configure>', lambda e: self.root.after(10, draw_circuit_pattern))
+        
+        # Create content frame with semi-transparent background
+        content_frame = tk.Frame(main_frame, bg='#1a1a1a', relief=tk.RAISED, bd=2)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Title with digital font and green color (like old CRT monitors)
+        title_label = tk.Label(content_frame, 
+                              text="Hello World Code Generator\n103+ Languages & Compilation Commands", 
+                              font=self.title_font,
+                              fg='#00ff00',  # Bright green like old terminals
+                              bg='#1a1a1a',
+                              justify=tk.CENTER)
+        title_label.pack(pady=(10, 20))
+        
+        # Main content area
+        main_content = tk.Frame(content_frame, bg='#1a1a1a')
+        main_content.pack(fill=tk.BOTH, expand=True, padx=10)
         
         # Left panel - Language list
-        left_frame = ttk.Frame(main_frame)
-        left_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
+        left_frame = tk.Frame(main_content, bg='#1a1a1a')
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 10))
         
-        ttk.Label(left_frame, text="Programming Languages:", font=("Arial", 12, "bold")).pack(pady=(0, 5))
+        lang_label = tk.Label(left_frame, 
+                             text="Programming Languages:", 
+                             font=self.label_font,
+                             fg='#00ff00',
+                             bg='#1a1a1a')
+        lang_label.pack(pady=(0, 5))
         
         # Language listbox with scrollbar
-        listbox_frame = ttk.Frame(left_frame)
+        listbox_frame = tk.Frame(left_frame, bg='#1a1a1a')
         listbox_frame.pack(fill=tk.BOTH, expand=True)
         
-        self.language_listbox = tk.Listbox(listbox_frame, width=25, font=("Arial", 10))
-        scrollbar = ttk.Scrollbar(listbox_frame, orient=tk.VERTICAL, command=self.language_listbox.yview)
+        self.language_listbox = tk.Listbox(listbox_frame, 
+                                          width=25, 
+                                          font=self.digital_font,
+                                          bg='#000000',  # Black background
+                                          fg='#00ff00',  # Green text
+                                          selectbackground='#004400',  # Dark green selection
+                                          selectforeground='#00ff00')
+        
+        scrollbar = tk.Scrollbar(listbox_frame, orient=tk.VERTICAL, command=self.language_listbox.yview)
         self.language_listbox.configure(yscrollcommand=scrollbar.set)
         
         self.language_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -974,56 +1074,106 @@ MSG:    .ASCII  /{text}/<15><12>
         self.language_listbox.bind('<<ListboxSelect>>', self.on_language_select)
         
         # Right panel - Code generation
-        right_frame = ttk.Frame(main_frame)
-        right_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
-        right_frame.columnconfigure(0, weight=1)
-        right_frame.rowconfigure(2, weight=1)
+        right_frame = tk.Frame(main_content, bg='#1a1a1a')
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
         # Custom text input
-        ttk.Label(right_frame, text="Custom Text:", font=("Arial", 12, "bold")).grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        custom_label = tk.Label(right_frame, 
+                               text="Custom Text:", 
+                               font=self.label_font,
+                               fg='#00ff00',
+                               bg='#1a1a1a')
+        custom_label.pack(anchor=tk.W, pady=(0, 5))
         
         self.custom_text = tk.StringVar(value="Hello World!")
-        text_entry = ttk.Entry(right_frame, textvariable=self.custom_text, font=("Arial", 10))
-        text_entry.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
+        text_entry = tk.Entry(right_frame, 
+                             textvariable=self.custom_text, 
+                             font=("Arial", 10),  # Keep normal font for input
+                             bg='#ffffff',
+                             fg='#000000')
+        text_entry.pack(fill=tk.X, pady=(0, 10))
         text_entry.bind('<KeyRelease>', self.on_text_change)
         
         # Generated code area
-        ttk.Label(right_frame, text="Generated Code:", font=("Arial", 12, "bold")).grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
+        code_label = tk.Label(right_frame, 
+                             text="Generated Code:", 
+                             font=self.label_font,
+                             fg='#00ff00',
+                             bg='#1a1a1a')
+        code_label.pack(anchor=tk.W, pady=(0, 5))
         
-        self.code_text = scrolledtext.ScrolledText(right_frame, wrap=tk.WORD, 
-                                                  font=("Courier New", 10), 
-                                                  height=15, width=50)
-        self.code_text.grid(row=3, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
+        self.code_text = scrolledtext.ScrolledText(right_frame, 
+                                                  wrap=tk.WORD, 
+                                                  font=("Courier New", 10),  # Keep normal font for code
+                                                  height=15, 
+                                                  width=50,
+                                                  bg='#000000',  # Black background
+                                                  fg='#00ff00',  # Green text
+                                                  insertbackground='#00ff00')  # Green cursor
+        self.code_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
         
         # Compilation commands area (for compiled languages)
-        self.compile_frame = ttk.Frame(right_frame)
-        self.compile_frame.grid(row=4, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-        self.compile_frame.columnconfigure(0, weight=1)
+        self.compile_frame = tk.Frame(right_frame, bg='#1a1a1a')
+        self.compile_frame.pack(fill=tk.X, pady=(0, 10))
         
-        self.compile_label = ttk.Label(self.compile_frame, text="Compilation Commands:", font=("Arial", 12, "bold"))
-        self.compile_label.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
+        self.compile_label = tk.Label(self.compile_frame, 
+                                     text="Compilation Commands:", 
+                                     font=self.label_font,
+                                     fg='#00ff00',
+                                     bg='#1a1a1a')
+        self.compile_label.pack(anchor=tk.W, pady=(0, 5))
         
-        self.compile_text = tk.Text(self.compile_frame, wrap=tk.WORD, 
+        self.compile_text = tk.Text(self.compile_frame, 
+                                   wrap=tk.WORD, 
                                    font=("Courier New", 10), 
-                                   height=3, width=50, bg="#f0f0f0")
-        self.compile_text.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
+                                   height=3, 
+                                   width=50, 
+                                   bg='#000000',  # Black background
+                                   fg='#ffff00',  # Yellow text for commands
+                                   insertbackground='#ffff00')
+        self.compile_text.pack(fill=tk.X, pady=(0, 5))
         
         # Initially hide compilation section
-        self.compile_frame.grid_remove()
+        self.compile_frame.pack_forget()
         
         # Buttons frame
-        button_frame = ttk.Frame(right_frame)
-        button_frame.grid(row=5, column=0, sticky=(tk.W, tk.E))
+        button_frame = tk.Frame(right_frame, bg='#1a1a1a')
+        button_frame.pack(fill=tk.X)
         
-        ttk.Button(button_frame, text="Copy Code", command=self.copy_code).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="Copy Compile Command", command=self.copy_compile).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="Clear", command=self.clear_code).pack(side=tk.LEFT)
+        # Style buttons to match the theme
+        button_style = {
+            'font': self.digital_font,
+            'bg': '#004400',
+            'fg': '#00ff00',
+            'activebackground': '#006600',
+            'activeforeground': '#00ff00',
+            'relief': tk.RAISED,
+            'bd': 2
+        }
+        
+        copy_btn = tk.Button(button_frame, text="Copy Code", command=self.copy_code, **button_style)
+        copy_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        copy_compile_btn = tk.Button(button_frame, text="Copy Compile Command", command=self.copy_compile, **button_style)
+        copy_compile_btn.pack(side=tk.LEFT, padx=(0, 10))
+        
+        clear_btn = tk.Button(button_frame, text="Clear", command=self.clear_code, **button_style)
+        clear_btn.pack(side=tk.LEFT)
         
         # Status bar
+        status_frame = tk.Frame(content_frame, bg='#1a1a1a')
+        status_frame.pack(fill=tk.X, pady=(10, 0))
+        
         self.status_var = tk.StringVar(value="Select a programming language to generate code")
-        status_bar = ttk.Label(main_frame, textvariable=self.status_var, 
-                              relief=tk.SUNKEN, anchor=tk.W)
-        status_bar.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
+        status_bar = tk.Label(status_frame, 
+                             textvariable=self.status_var,
+                             font=self.digital_font,
+                             fg='#ffff00',  # Yellow for status
+                             bg='#000000',
+                             relief=tk.SUNKEN, 
+                             anchor=tk.W,
+                             bd=1)
+        status_bar.pack(fill=tk.X, padx=5, pady=5)
         
     def on_language_select(self, event):
         """Handle language selection from the listbox"""
@@ -1069,9 +1219,9 @@ MSG:    .ASCII  /{text}/<15><12>
             if compile_cmd:
                 self.compile_text.delete(1.0, tk.END)
                 self.compile_text.insert(1.0, compile_cmd)
-                self.compile_frame.grid()
+                self.compile_frame.pack(fill=tk.X, pady=(0, 10))
             else:
-                self.compile_frame.grid_remove()
+                self.compile_frame.pack_forget()
             
             # Clean up the display name for status
             clean_name = language_name.replace("  └─ ", "")
@@ -1082,7 +1232,7 @@ MSG:    .ASCII  /{text}/<15><12>
             
         except Exception as e:
             self.status_var.set(f"Error generating code: {str(e)}")
-            self.compile_frame.grid_remove()
+            self.compile_frame.pack_forget()
             
     def generate_code(self, language):
         """Legacy method - kept for compatibility"""
@@ -1124,7 +1274,7 @@ MSG:    .ASCII  /{text}/<15><12>
         """Clear the generated code area"""
         self.code_text.delete(1.0, tk.END)
         self.compile_text.delete(1.0, tk.END)
-        self.compile_frame.grid_remove()
+        self.compile_frame.pack_forget()
         self.status_var.set("Code cleared")
 
 def main():
